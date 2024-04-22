@@ -1,7 +1,8 @@
 import json
 import requests
 import io
-from polars import read_csv
+import polars
+import datetime
 
 from dagster import (
     MaterializeResult,
@@ -11,7 +12,7 @@ from dagster import (
 
     
 @asset
-def people_100_asset():
+def people_asset():
     url = "https://drive.google.com/uc?id=1phaHg9objxK2MwaZmSUZAKQ8kVqlgng4&export=download"
     filename = "people-100"
 
@@ -19,7 +20,7 @@ def people_100_asset():
         response = requests.get(url)
         response.raise_for_status()  
         
-        dataframe = read_csv(io.StringIO(response.text))
+        dataframe = polars.read_csv(io.StringIO(response.text))
         
         dataframe.write_csv(f"{filename}.csv")
 
@@ -30,11 +31,10 @@ def people_100_asset():
     return dataframe
 
 
-@asset(deps=[people_100_asset])
+@asset(deps=[people_asset])
 def unique_firstnames() -> MaterializeResult:
+    dataframe = people_asset()
     column = "First Name"
-    
-    dataframe = people_100_asset()
 
     unique_firstnames = dataframe.select(column).unique()
 
