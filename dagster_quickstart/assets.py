@@ -1,14 +1,13 @@
 import json
 import requests
-import polars
 import io
+from polars import read_csv
 
 from dagster import (
     MaterializeResult,
     MetadataValue,
     asset,
 )
-
 
     
 @asset
@@ -20,7 +19,7 @@ def people_100_asset():
         response = requests.get(url)
         response.raise_for_status()  
         
-        dataframe = polars.read_csv(io.StringIO(response.text))
+        dataframe = read_csv(io.StringIO(response.text))
         
         dataframe.write_csv(f"{filename}.csv")
 
@@ -29,3 +28,5 @@ def people_100_asset():
         return None
     
     return dataframe
+
+# print(people_100_asset())
