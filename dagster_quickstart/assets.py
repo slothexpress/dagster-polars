@@ -29,4 +29,21 @@ def people_100_asset():
     
     return dataframe
 
-# print(people_100_asset())
+
+@asset(deps=[people_100_asset])
+def unique_firstnames() -> MaterializeResult:
+    column = "First Name"
+    
+    dataframe = people_100_asset()
+
+    unique_firstnames = dataframe.select(column).unique()
+
+    preview = str(unique_firstnames)
+
+    return MaterializeResult(
+        metadata={
+            "num_unique_firstnames": len(unique_firstnames),
+            "preview": MetadataValue.md(preview),
+        }
+    )
+    
