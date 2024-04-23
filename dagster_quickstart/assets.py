@@ -47,3 +47,20 @@ def unique_firstnames() -> MaterializeResult:
         }
     )
     
+    
+@asset(deps=[people_asset])
+def mean_age_per_profession() -> MaterializeResult:
+    dataframe = people_asset()
+    column_profession = "Job Title"
+    column_birthdate = "Date of birth"
+    column_age = "Age"
+    today = datetime.date.today()
+
+    profession_and_birthdate_dataframe = dataframe.select([column_profession, column_birthdate])
+    
+    profession_and_age = profession_and_birthdate_dataframe.with_columns((polars.col(column_birthdate)).alias(column_age))
+    print(profession_and_age)
+    
+    
+    
+mean_age_per_profession()
