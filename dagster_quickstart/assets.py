@@ -3,6 +3,7 @@ import requests
 import io
 import polars
 import datetime
+import pandas as pd
 
 from dagster import (
     MaterializeResult,
@@ -49,40 +50,46 @@ def unique_firstnames() -> MaterializeResult:
     
     
 @asset(deps=[people_asset])
-def anonymise_by_lastname() -> MaterializeResult:
+def anonymization_by_lastname() -> MaterializeResult:
     dataframe = people_asset()
     column = "Last Name"
 
-    print(dataframe)
     shuffled_lastnames = polars.col(column).shuffle(seed=1)
-    print(shuffled_lastnames)
     
     dataframe_shuffled = dataframe.with_columns(shuffled_lastnames.alias(column))
-    print(dataframe_shuffled)
 
-    preview = str(dataframe)
+    preview = str(dataframe_shuffled)
 
     return MaterializeResult(
         metadata={
-            "num_unique_firstnames": len(dataframe),
+            "num_shuffled_lastnames": len(dataframe_shuffled),
             "preview": MetadataValue.md(preview),
         }
     )
     
-    
 @asset(deps=[people_asset])
 def mean_age_per_profession() -> MaterializeResult:
-    dataframe = people_asset()
+    dataframe = people_asset()  # Assuming people_asset() retrieves the DataFrame
     column_profession = "Job Title"
     column_birthdate = "Date of birth"
     column_age = "Age"
-    today = datetime.date.today()
 
-    profession_and_birthdate_dataframe = dataframe.select([column_profession, column_birthdate])
+    # Convert birthdate column to datetime
+    birthdate = dataframe[column_birthdate].str.to_date("%Y-%m-%d")
+    dataframe = dataframe.with_columns(birthdate.alias(column_birthdate))
     
-    profession_and_age = profession_and_birthdate_dataframe.with_columns((polars.col(column_birthdate)).alias(column_age))
-    print(profession_and_age)
+    print(dataframe)
+    
+    preview = str(dataframe)
+    
+    return MaterializeResult(
+        metadata={
+            "num_mean_age": len(dataframe),
+            "preview": MetadataValue.md(preview),
+        }
+    )
+
+
     
     
-    
-anonymise_by_lastname()
+mean_age_per_profession()
