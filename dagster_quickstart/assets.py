@@ -110,4 +110,29 @@ def mean_age_per_profession() -> MaterializeResult:
     )
 
     
-mean_age_per_profession()
+@asset(deps=[people_asset])
+def funny_ages():
+    dataframe = people_asset()
+    column_profession = "Job Title"
+    column_birthdate = "Date of birth"
+    column_age = "Age"
+
+    # Convert birthdate column to datetime using polars to_date
+    birthdate = dataframe[column_birthdate].str.to_date("%Y-%m-%d")
+    dataframe = dataframe.with_columns(birthdate.alias(column_birthdate))
+    
+    # Calculate age and add to new column
+    ages = helper_calculate_age(dataframe[column_birthdate])
+    dataframe = dataframe.with_columns(ages.alias(column_age))
+    
+    # Find ages below 13 or above 100
+    funny_ages = (
+    dataframe.select(["First Name", column_profession, column_birthdate, column_age])
+    .filter((dataframe[column_age] < 13) | (dataframe[column_age] > 100))
+    )
+    
+    print(funny_ages)
+    
+
+funny_ages()
+        
