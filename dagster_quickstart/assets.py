@@ -22,7 +22,7 @@ def people_asset():
         
         dataframe = polars.read_csv(io.StringIO(response.text))
         
-        dataframe.write_csv(f"{filename}.csv")
+        # dataframe.write_csv(f"{filename}.csv")
 
     except Exception as e:
         print("An error occurred:", e)
@@ -49,6 +49,28 @@ def unique_firstnames() -> MaterializeResult:
     
     
 @asset(deps=[people_asset])
+def anonymise_by_lastname() -> MaterializeResult:
+    dataframe = people_asset()
+    column = "Last Name"
+
+    print(dataframe)
+    shuffled_lastnames = polars.col(column).shuffle(seed=1)
+    print(shuffled_lastnames)
+    
+    dataframe_shuffled = dataframe.with_columns(shuffled_lastnames.alias(column))
+    print(dataframe_shuffled)
+
+    preview = str(dataframe)
+
+    return MaterializeResult(
+        metadata={
+            "num_unique_firstnames": len(dataframe),
+            "preview": MetadataValue.md(preview),
+        }
+    )
+    
+    
+@asset(deps=[people_asset])
 def mean_age_per_profession() -> MaterializeResult:
     dataframe = people_asset()
     column_profession = "Job Title"
@@ -63,4 +85,4 @@ def mean_age_per_profession() -> MaterializeResult:
     
     
     
-mean_age_per_profession()
+anonymise_by_lastname()
