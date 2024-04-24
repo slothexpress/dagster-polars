@@ -93,16 +93,18 @@ def mean_age_per_profession() -> MaterializeResult:
     birthdate = dataframe[column_birthdate].str.to_date("%Y-%m-%d")
     dataframe = dataframe.with_columns(birthdate.alias(column_birthdate))
     
+    # Calculate age and add to new column
     ages = helper_calculate_age(dataframe[column_birthdate])
-
     dataframe = dataframe.with_columns(ages.alias(column_age))
-    print(dataframe)
     
-    preview = str(dataframe)
+    # Group by job title and find mean age
+    mean_age_group_by_profession = dataframe.groupby(column_profession).agg(polars.mean(column_age).alias("Mean Age"))
+        
+    preview = str(mean_age_group_by_profession)
     
     return MaterializeResult(
         metadata={
-            "num_mean_age": len(dataframe),
+            "num_mean_age": len(mean_age_group_by_profession),
             "preview": MetadataValue.md(preview),
         }
     )
