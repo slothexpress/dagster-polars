@@ -67,17 +67,35 @@ def anonymization_by_lastname() -> MaterializeResult:
         }
     )
     
+
+def helper_calculate_age(birthdates: polars.Series) -> polars.Series:
+    today = datetime.date.today()
+    
+    ages = polars.Series([], dtype=polars.Int64)
+    
+    for birthdate in birthdates:
+        age = today.year - birthdate.year - ((today.month, today.day) < (birthdate.month, birthdate.day))
+        
+        series = polars.Series([age])
+        ages.append(series)
+        
+    return ages
+
+
 @asset(deps=[people_asset])
 def mean_age_per_profession() -> MaterializeResult:
-    dataframe = people_asset()  # Assuming people_asset() retrieves the DataFrame
+    dataframe = people_asset()
     column_profession = "Job Title"
     column_birthdate = "Date of birth"
     column_age = "Age"
 
-    # Convert birthdate column to datetime
+    # Convert birthdate column to datetime using polars to_date
     birthdate = dataframe[column_birthdate].str.to_date("%Y-%m-%d")
     dataframe = dataframe.with_columns(birthdate.alias(column_birthdate))
     
+    ages = helper_calculate_age(dataframe[column_birthdate])
+
+    dataframe = dataframe.with_columns(ages.alias(column_age))
     print(dataframe)
     
     preview = str(dataframe)
@@ -89,7 +107,5 @@ def mean_age_per_profession() -> MaterializeResult:
         }
     )
 
-
-    
     
 mean_age_per_profession()
