@@ -83,9 +83,8 @@ def helper_calculate_age(birthdates: polars.Series) -> polars.Series:
 
 
 @asset(deps=[people_asset])
-def mean_age_per_profession() -> MaterializeResult:
+def people_and_age_asset():
     dataframe = people_asset()
-    column_profession = "Job Title"
     column_birthdate = "Date of birth"
     column_age = "Age"
 
@@ -97,9 +96,23 @@ def mean_age_per_profession() -> MaterializeResult:
     ages = helper_calculate_age(dataframe[column_birthdate])
     dataframe = dataframe.with_columns(ages.alias(column_age))
     
+    return dataframe
+    
+    
+@asset(deps=[people_and_age_asset])
+def mean_age_per_profession() -> MaterializeResult:
+    dataframe = people_and_age_asset()
+    column_profession = "Job Title"
+    column_age = "Age"
+    
     # Group by job title and find mean age
-    mean_age_group_by_profession = dataframe.groupby(column_profession).agg(polars.mean(column_age).alias("Mean Age"))
+    mean_age_group_by_profession = (
+        dataframe.groupby(column_profession)
+        .agg(polars.mean(column_age).alias("Mean Age"))
+    )
         
+    print(mean_age_group_by_profession)
+    
     preview = str(mean_age_group_by_profession)
     
     return MaterializeResult(
@@ -110,29 +123,23 @@ def mean_age_per_profession() -> MaterializeResult:
     )
 
     
-@asset(deps=[people_asset])
+@asset(deps=[people_and_age_asset])
 def funny_ages():
-    dataframe = people_asset()
+    dataframe = people_and_age_asset()
     column_profession = "Job Title"
     column_birthdate = "Date of birth"
     column_age = "Age"
-
-    # Convert birthdate column to datetime using polars to_date
-    birthdate = dataframe[column_birthdate].str.to_date("%Y-%m-%d")
-    dataframe = dataframe.with_columns(birthdate.alias(column_birthdate))
+    column_firstname = "First Name"
     
-    # Calculate age and add to new column
-    ages = helper_calculate_age(dataframe[column_birthdate])
-    dataframe = dataframe.with_columns(ages.alias(column_age))
-    
-    # Find ages below 13 or above 100
+    # Find ages below 13
     funny_ages = (
-    dataframe.select(["First Name", column_profession, column_birthdate, column_age])
-    .filter((dataframe[column_age] < 13) | (dataframe[column_age] > 100))
+        dataframe.select([column_firstname, column_profession, column_birthdate, column_age])
+        .filter((dataframe[column_age] < 13))
     )
     
     print(funny_ages)
     
-
+    
+mean_age_per_profession()
 funny_ages()
         
