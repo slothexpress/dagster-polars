@@ -7,13 +7,18 @@ The pipeline should transform data and create assets that fulfil the following c
 2. Anonymise data by shuffling "Last Name"
 3. Group by job title and find mean Age
 
+## Limitations
+The pipeline does not persist the data/assets in any type of data warehouse or database.
+
+## Dagster Quickstart
+
+
 <div align="center">
   <a target="_blank" href="https://dagster.io" style="background:none">
     <img alt="dagster logo" src="https://github.com/dagster-io/dagster-quickstart/assets/5807118/7010804c-05a6-4ef4-bfc8-d9c88d458906" width="auto" height="120px">
   </a>
 </div>
 
-## Dagster Quickstart
 
 Get up-and-running with the Dagster quickstart project -- open the project in a GitHub Codespace and start building data pipelines with no local installation required.
 
